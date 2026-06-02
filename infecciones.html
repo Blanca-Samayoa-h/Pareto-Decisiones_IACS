@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pareto — Infecciones Hospitalarias</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f4f0;color:#1a1a1a;font-size:15px;line-height:1.5}
+.app{max-width:860px;margin:0 auto;padding:2rem 1.25rem 3rem}
+
+/* Header */
+.app-title{font-size:21px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.app-sub{font-size:13px;color:#777;margin-bottom:1.5rem}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.tab{padding:6px 16px;font-size:13px;border:1px solid #ccc;border-radius:20px;background:#fff;cursor:pointer;color:#666;transition:all .15s;font-family:inherit}
+.tab:hover{border-color:#9d97e0;color:#3C3489;background:#f5f4ff}
+.tab.active{background:#EEEDFE;color:#3C3489;border-color:#9d97e0;font-weight:500}
+
+/* Scenario header */
+.scen-title{font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:.5rem}
+.scen-ctx{font-size:13px;color:#555;line-height:1.65;background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:.8rem 1rem;margin-bottom:1.25rem}
+
+/* Metric cards */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.mc{background:#fff;border:1px solid #e2e0d8;border-radius:10px;padding:.8rem 1rem}
+.mc-lbl{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.mc-val{font-size:21px;font-weight:600;color:#1a1a1a}
+.mc-sub{font-size:11px;color:#bbb;margin-top:2px}
+
+/* Legend */
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#777;align-items:center;margin-bottom:.75rem}
+.lb{width:12px;height:12px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:4px;flex-shrink:0}
+
+/* Chart */
+.chart-card{background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:1.1rem 1.1rem .8rem;margin-bottom:1.25rem}
+.chart-wrap{position:relative;width:100%;height:310px}
+
+/* Insight */
+.insight{background:#EEEDFE;border-left:3px solid #7F77DD;border-radius:0 8px 8px 0;padding:.75rem 1rem;font-size:13px;color:#3C3489;line-height:1.6;margin-bottom:1.25rem}
+.insight strong{font-weight:600}
+
+/* Table */
+.sec-lbl{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.5rem}
+.table-card{background:#fff;border:1px solid #e2e0d8;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+thead th{padding:8px 10px;background:#faf9f5;border-bottom:1px solid #e2e0d8;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#999;text-align:right}
+thead th:first-child{text-align:left}
+tbody td{padding:7px 10px;border-bottom:1px solid #f0ede6;color:#1a1a1a;text-align:right}
+tbody td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.vital{background:#f6f5ff}
+tbody tr.vital td{font-weight:500}
+tbody tr.vital td:first-child{color:#185FA5}
+.corte-lbl{color:#BA7517;font-weight:600}
+
+/* Reflexion */
+.ref-card{background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:1.1rem 1.25rem;margin-top:1.5rem}
+.ref-q{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:.5rem;line-height:1.6}
+.ref-hint{font-size:12.5px;color:#888;font-style:italic;margin-bottom:.85rem;line-height:1.55;background:#faf9f5;border-radius:7px;padding:.5rem .75rem;border-left:2px solid #ccc}
+.ref-hint strong{font-weight:600;color:#666;font-style:normal}
+textarea{width:100%;min-height:90px;resize:vertical;border:1px solid #ccc;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;color:#1a1a1a;line-height:1.6;transition:border .15s}
+textarea:focus{outline:none;border-color:#9d97e0;box-shadow:0 0 0 3px rgba(127,119,221,.1)}
+textarea::placeholder{color:#bbb}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{padding:7px 18px;font-size:13px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;color:#555;font-family:inherit;transition:all .15s}
+.btn:hover{background:#f5f4f0}
+.btn.primary{border-color:#9d97e0;color:#3C3489;background:#EEEDFE}
+.btn.primary:hover{background:#e0defe}
+.fb-box{margin-top:.85rem;font-size:13px;line-height:1.65;padding:.75rem 1rem;border-radius:0 8px 8px 0}
+.fb-pista{background:#FAEEDA;border-left:3px solid #EF9F27;color:#633806}
+.fb-criterio{background:#EAF3DE;border-left:3px solid #7cbd52;color:#27500A}
+.fb-box strong{font-weight:600}
+
+/* Builder */
+.builder-card{background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.field-lbl{font-size:12px;color:#777;font-weight:500;margin-bottom:4px}
+input[type=text],input[type=number]{border:1px solid #ccc;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fff;width:100%;transition:border .15s}
+input:focus{outline:none;border-color:#9d97e0;box-shadow:0 0 0 3px rgba(127,119,221,.1)}
+.rows-hdr{display:grid;grid-template-columns:1fr 110px 34px;gap:6px;margin-bottom:5px}
+.rows-hdr span{font-size:11px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.drow{display:grid;grid-template-columns:1fr 110px 34px;gap:6px;margin-bottom:6px;align-items:center}
+.rm-btn{width:30px;height:30px;border:1px solid #ccc;border-radius:7px;background:#fff;cursor:pointer;color:#bbb;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-family:inherit}
+.rm-btn:hover{background:#fde8e8;border-color:#f09595;color:#a32d2d}
+.add-btn{font-size:12px;padding:6px 14px;border:1px solid #ccc;border-radius:7px;background:#fff;cursor:pointer;color:#666;margin-bottom:1rem;font-family:inherit}
+.add-btn:hover{background:#f5f4f0}
+.gen-btn{width:100%;padding:10px;font-size:14px;border:1px solid #9d97e0;border-radius:9px;background:#EEEDFE;cursor:pointer;color:#3C3489;font-weight:600;font-family:inherit;transition:all .15s}
+.gen-btn:hover{background:#e0defe}
+.err{font-size:13px;color:#a32d2d;background:#FCEBEB;border:1px solid #f7c1c1;border-radius:8px;padding:.6rem .9rem;margin-top:.5rem}
+
+footer{text-align:center;font-size:12px;color:#ccc;margin-top:2.5rem;padding-top:1rem;border-top:1px solid #e2e0d8}
+
+@media(max-width:580px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .meta-grid{grid-template-columns:1fr}
+  .chart-wrap{height:250px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1 class="app-title">Análisis de Pareto — Infecciones Hospitalarias</h1>
+  <p class="app-sub">Identifica el 20% de causas que generan el 80% de los casos. Explora escenarios o construye el tuyo.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
+  <footer>Widget educativo · Control de Infecciones · Principio de Pareto (80/20)</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── DATA ── */
+const SCENES = [
+  {
+    id:"lavado", label:"Lavado de manos",
+    title:"Incumplimiento del lavado de manos",
+    ctx:"Un hospital de segundo nivel reportó 975 casos de infección nosocomial en 6 meses. Se registraron las principales causas relacionadas con fallas en la higiene de manos según los 5 momentos de la OMS.",
+    data:[
+      {c:"Rotación de estudiantes y residentes",n:300},
+      {c:"Limpieza y desinfección inadecuada",n:250},
+      {c:"Antibióticos inapropiados",n:200},
+      {c:"Incumplimiento 5 momentos OMS",n:125},
+      {c:"Insumos para lavado insuficientes",n:100}
+    ],
+    q:"Observa las barras y la línea acumulada. ¿Cuántas causas necesitarías intervenir para resolver el 80% del problema? ¿Qué tipo de intervención propondrías para la causa con mayor frecuencia?",
+    pistas:[
+      "Pista 1 — Cuenta las barras de color intenso (azul oscuro) que aparecen ANTES de que la línea naranja supere el 80%.",
+      "Pista 2 — Pregúntate: ¿la 'rotación de estudiantes' es modificable con educación puntual o requiere un cambio de sistema/protocolo?",
+      "Pista 3 — ¿Qué diferencia hay entre una intervención educativa (ej. taller) y una intervención de sistema (ej. dispensadores automáticos en cada cama)?"
+    ],
+    criterio:"Una respuesta completa: (1) nombra el número exacto de causas vitales y el % acumulado que representan, (2) propone al menos una intervención concreta y factible para la causa principal, y (3) distingue si la intervención es educativa o estructural."
+  },
+  {
+    id:"uci", label:"UCI — IAAS",
+    title:"Infecciones asociadas a la atención en salud — UCI",
+    ctx:"En una UCI de 40 camas se analizaron 483 infecciones nosocomiales durante un trimestre. Se busca priorizar las intervenciones de control según el principio de Pareto.",
+    data:[
+      {c:"Neumonía asociada a ventilador (NAV)",n:148},
+      {c:"Infección por catéter venoso central",n:112},
+      {c:"Infección tracto urinario (ITU-sonda)",n:89},
+      {c:"Bacteriemia primaria",n:67},
+      {c:"Infección herida quirúrgica",n:38},
+      {c:"Infección por C. difficile",n:18},
+      {c:"Otras infecciones",n:11}
+    ],
+    q:"Si el hospital solo puede financiar dos 'bundles' de prevención este semestre, ¿cuáles elegirías y por qué? Apoya tu decisión en los porcentajes de la gráfica.",
+    pistas:[
+      "Pista 1 — Un 'bundle' es un conjunto de prácticas que se aplican TODAS juntas de forma estandarizada; la omisión de una sola reduce su efectividad.",
+      "Pista 2 — Revisa la tabla: ¿qué porcentaje acumulado suman las dos primeras causas? ¿Justifica la inversión concentrada?",
+      "Pista 3 — Para la NAV piensa en: posición de cabecera, higiene bucal, manejo del manguito, revisión diaria de extubación."
+    ],
+    criterio:"Una respuesta completa: (1) elige los dos bundles específicos (NAV y CVC), (2) indica el % de casos que cubrirían juntos, y (3) menciona al menos un elemento concreto de cada bundle."
+  },
+  {
+    id:"pediatria", label:"Pediatría",
+    title:"Infecciones nosocomiales en sala pediátrica",
+    ctx:"Sala pediátrica de un hospital de tercer nivel — 213 infecciones registradas en un año. El 68% de los pacientes afectados tienen menos de 2 años. El servicio tiene capacidad limitada de aislamiento.",
+    data:[
+      {c:"Gastroenteritis nosocomial (rotavirus)",n:74},
+      {c:"Infección respiratoria adquirida",n:55},
+      {c:"Infección por acceso vascular",n:33},
+      {c:"Infección urinaria (sondaje)",n:22},
+      {c:"Varicela nosocomial",n:14},
+      {c:"Infección de piel y heridas",n:9},
+      {c:"Otras",n:6}
+    ],
+    q:"Con capacidad limitada de aislamiento, ¿qué criterio usarías para decidir a qué pacientes aislar primero? ¿Cómo te apoya el gráfico de Pareto para justificar esa decisión ante el jefe de servicio?",
+    pistas:[
+      "Pista 1 — Identifica la vía de transmisión de la causa principal: ¿es fecal-oral, aérea, o por contacto directo? Eso determina el tipo de aislamiento.",
+      "Pista 2 — ¿Cuántos tipos de aislamiento distintos necesitarías para cubrir el 80% de los casos? ¿Tiene sentido en un servicio con recursos limitados?",
+      "Pista 3 — Piensa en el argumento cuantitativo: ¿cuántos casos evitarías por cada tipo de aislamiento implementado?"
+    ],
+    criterio:"Una respuesta sólida: (1) identifica la vía de transmisión de las causas vitales, (2) propone el tipo de aislamiento con mayor cobertura y (3) usa los datos numéricos de la tabla para justificar la priorización ante el jefe de servicio."
+  },
+  {
+    id:"cirugia", label:"Cirugía",
+    title:"Infecciones de sitio quirúrgico",
+    ctx:"Servicio de cirugía general de un hospital universitario. Se registraron 267 infecciones postoperatorias en 6 meses, incluyendo cirugías electivas y de urgencia en pacientes adultos.",
+    data:[
+      {c:"Infección superficial incisional",n:98},
+      {c:"Infección profunda incisional",n:71},
+      {c:"Infección de órgano/espacio (absceso)",n:48},
+      {c:"Peritonitis postoperatoria",n:27},
+      {c:"Infección de fístula o drenaje",n:14},
+      {c:"Otras infecciones postquirúrgicas",n:9}
+    ],
+    q:"¿Cuántos tipos de infección quirúrgica deberías atacar para resolver el 80% del problema? Describe el protocolo de prevención que implementarías para las causas vitales.",
+    pistas:[
+      "Pista 1 — Revisa la columna '% acumulado' en la tabla: ¿en qué fila supera el 80% por primera vez?",
+      "Pista 2 — Las infecciones superficiales y profundas comparten factores de riesgo: técnica aséptica, preparación de piel, profilaxis antibiótica.",
+      "Pista 3 — Piensa en momentos: preoperatorio (profilaxis, tricotomía), intraoperatorio (asepsia, normotermia), postoperatorio (curación de herida, vigilancia)."
+    ],
+    criterio:"Una respuesta completa: (1) número exacto de causas vitales, (2) protocolo con al menos 3 medidas específicas y su temporalidad (pre/intra/post), y (3) justifica por qué esas causas y no las otras."
+  },
+  {id:"custom", label:"+ Mi escenario", custom:true}
+];
+
+/* ── STATE ── */
+let activeId = "lavado";
+let charts = {};
+let customRows = [{c:"",n:""},{c:"",n:""},{c:"",n:""},{c:"",n:""}];
+let customScen = null;
+
+/* ── PARETO CALC ── */
+function calcPareto(data){
+  const s = [...data].sort((a,b)=>b.n-a.n);
+  const total = s.reduce((acc,d)=>acc+d.n,0);
+  let cum = 0;
+  return s.map(d=>{cum+=d.n;return{...d,pct:d.n/total*100,cum:cum/total*100};});
+}
+
+/* ── CHART ── */
+const pluginLine80 = {
+  id:"line80",
+  afterDraw(ch){
+    const y2 = ch.scales["y2"]; if(!y2) return;
+    const yPx = y2.getPixelForValue(80);
+    const {left,right} = ch.chartArea;
+    const ctx = ch.ctx;
+    ctx.save();
+    ctx.setLineDash([6,4]);
+    ctx.strokeStyle="rgba(186,117,23,.65)";
+    ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(left,yPx); ctx.lineTo(right,yPx); ctx.stroke();
+    ctx.restore();
+  }
+};
+Chart.register(pluginLine80);
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function drawChart(cid, rows){
+  destroyChart(cid);
+  const el = document.getElementById(cid);
+  if(!el) return;
+  charts[cid] = new Chart(el,{
+    type:"bar",
+    data:{
+      labels: rows.map(r=>r.c.length>30?r.c.slice(0,28)+"…":r.c),
+      datasets:[
+        {
+          type:"bar", label:"Frecuencia", yAxisID:"y1", order:2,
+          data: rows.map(r=>r.n),
+          backgroundColor: rows.map(r=>r.cum<=80.05?"#7F77DD":"#CECBF6"),
+          borderWidth:0
+        },
+        {
+          type:"line", label:"% Acumulado", yAxisID:"y2", order:1,
+          data: rows.map(r=>+r.cum.toFixed(1)),
+          borderColor:"#BA7517", backgroundColor:"rgba(186,117,23,.07)",
+          pointBackgroundColor:"#BA7517", pointRadius:4,
+          tension:.3, fill:true
+        }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.datasetIndex===0?` Casos: ${c.raw}`:` Acumulado: ${c.raw}%`}}
+      },
+      scales:{
+        x:{ticks:{font:{size:11},color:"#999",autoSkip:false,maxRotation:42,minRotation:22},grid:{display:false}},
+        y1:{position:"left",beginAtZero:true,ticks:{font:{size:11},color:"#999"},grid:{color:"rgba(0,0,0,.05)"},title:{display:true,text:"Casos",font:{size:11},color:"#bbb"}},
+        y2:{position:"right",min:0,max:100,ticks:{font:{size:11},color:"#BA7517",callback:v=>v+"%"},grid:{display:false},title:{display:true,text:"% Acumulado",font:{size:11},color:"#BA7517"}}
+      }
+    }
+  });
+}
+
+/* ── BUILDERS ── */
+function htmlMetrics(rows){
+  const total=rows.reduce((s,r)=>s+r.n,0);
+  const vital=rows.filter(r=>r.cum<=80.05);
+  const vCases=vital.reduce((s,r)=>s+r.n,0);
+  return`<div class="metrics">
+    <div class="mc"><div class="mc-lbl">Total casos</div><div class="mc-val">${total}</div></div>
+    <div class="mc"><div class="mc-lbl">Categorías</div><div class="mc-val">${rows.length}</div></div>
+    <div class="mc"><div class="mc-lbl">Causas vitales</div><div class="mc-val">${vital.length}</div><div class="mc-sub">${Math.round(vital.length/rows.length*100)}% de categorías</div></div>
+    <div class="mc"><div class="mc-lbl">Casos en vitales</div><div class="mc-val">${vCases}</div><div class="mc-sub">${Math.round(vCases/total*100)}% del total</div></div>
+  </div>`;
+}
+
+function htmlTable(rows){
+  const vSet=new Set(rows.filter(r=>r.cum<=80.05).map(r=>r.c));
+  return`<span class="sec-lbl">Tabla de frecuencias</span>
+  <div class="table-card"><table>
+    <colgroup><col style="width:33%"><col style="width:9%"><col style="width:12%"><col style="width:15%"><col style="width:21%"><col style="width:10%"></colgroup>
+    <thead><tr>
+      <th style="text-align:left">Incidencia ordenada</th>
+      <th>Ranking</th><th>Frecuencia</th>
+      <th>Part. %</th><th>Part. % Acum.</th><th>Corte</th>
+    </tr></thead>
+    <tbody>
+    ${rows.map((r,i)=>`<tr class="${vSet.has(r.c)?'vital':''}">
+      <td>${r.c}</td><td>${i+1}</td><td>${r.n}</td>
+      <td>${r.pct.toFixed(1)}%</td><td>${r.cum.toFixed(1)}%</td>
+      <td class="corte-lbl">80%</td>
+    </tr>`).join("")}
+    </tbody>
+  </table></div>`;
+}
+
+function htmlInsight(rows){
+  const vital=rows.filter(r=>r.cum<=80.05);
+  const names=vital.map(r=>`<em>${r.c}</em>`).join(", ");
+  return`<div class="insight"><strong>Regla 80/20:</strong> ${vital.length} causa${vital.length!==1?"s":""} concentra${vital.length!==1?"n":""} el ≥80% de los casos → ${names}. Estas son las "pocas vitales" que deben priorizarse.</div>`;
+}
+
+function htmlReflex(scen, sfx){
+  if(!scen.q) return "";
+  const key = scen.id+sfx;
+  return`<span class="sec-lbl" style="margin-top:1.5rem">Pregunta de reflexión</span>
+  <div class="ref-card">
+    <p class="ref-q">&#128302; ${scen.q}</p>
+    <div class="ref-hint"><strong>Pista inicial:</strong> ${scen.pistas[0]}</div>
+    <textarea id="ta-${key}" placeholder="Escribe tu análisis aquí antes de consultar las pistas…"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="showFb('${key}','p2','${scen.id}')">Ver pista 2</button>
+      <button class="btn" onclick="showFb('${key}','p3','${scen.id}')">Ver pista 3</button>
+      <button class="btn primary" onclick="showFb('${key}','crit','${scen.id}')">Ver criterios de evaluación</button>
+    </div>
+    <div id="fb-${key}"></div>
+  </div>`;
+}
+
+function showFb(key, level, scenId){
+  const fb = document.getElementById("fb-"+key);
+  if(!fb) return;
+  const scen = SCENES.find(s=>s.id===scenId) || (customScen&&customScen.id===scenId?customScen:null);
+  if(!scen) return;
+  const ta = document.getElementById("ta-"+key);
+  const wrote = ta && ta.value.trim().length>20;
+  if(level==="p2"){
+    fb.innerHTML=`<div class="fb-box fb-pista"><strong>Pista 2:</strong> ${scen.pistas[1]}</div>`;
+  } else if(level==="p3"){
+    fb.innerHTML=`<div class="fb-box fb-pista"><strong>Pista 3:</strong> ${scen.pistas[2]||scen.pistas[1]}</div>`;
+  } else {
+    const nota = wrote
+      ? "Tu respuesta tiene contenido. Compárala con los criterios anteriores y enriquécela si es necesario."
+      : "<em>Escribe primero tu análisis: el aprendizaje se consolida cuando razonas antes de ver la respuesta.</em>";
+    fb.innerHTML=`<div class="fb-box fb-criterio"><strong>Criterios de una respuesta completa:</strong><br>${scen.criterio}<br><br>${nota}</div>`;
+  }
+}
+
+/* ── SCENARIO RENDERER ── */
+function renderScen(scen, rawData, sfx){
+  const rows = calcPareto(rawData);
+  const cid = "chart-"+scen.id+sfx;
+  return `
+    <div class="scen-title">${scen.title}</div>
+    <p class="scen-ctx">${scen.ctx}</p>
+    ${htmlMetrics(rows)}
+    <div class="legend">
+      <span><span class="lb" style="background:#7F77DD"></span>Causas vitales (≤80% acumulado)</span>
+      <span><span class="lb" style="background:#CECBF6"></span>Causas triviales (&gt;80%)</span>
+      <span><span class="lb" style="background:#BA7517;height:3px;width:20px;border-radius:1px"></span>Línea de corte 80%</span>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap">
+        <canvas id="${cid}" role="img"
+          aria-label="Gráfica de Pareto de infecciones: ${rows.map(r=>r.c+' '+r.n+' casos').join(', ')}">
+          ${rows.map(r=>r.c+": "+r.n+" casos.").join(" ")}
+        </canvas>
+      </div>
+    </div>
+    ${htmlInsight(rows)}
+    ${htmlTable(rows)}
+    ${htmlReflex(scen, sfx)}
+  `;
+}
+
+/* ── CUSTOM BUILDER ── */
+function refreshRows(){
+  const d = document.getElementById("drows");
+  if(!d) return;
+  d.innerHTML = customRows.map((r,i)=>`
+    <div class="drow">
+      <input type="text" value="${r.c}" placeholder="Causa ${i+1}" oninput="customRows[${i}].c=this.value">
+      <input type="number" value="${r.n||''}" placeholder="0" min="0" oninput="customRows[${i}].n=parseInt(this.value)||0">
+      <button class="rm-btn" onclick="removeRow(${i})" aria-label="Eliminar">&times;</button>
+    </div>`).join("");
+}
+function addRow(){ customRows.push({c:"",n:""}); refreshRows(); }
+function removeRow(i){ if(customRows.length<=2)return; customRows.splice(i,1); refreshRows(); }
+
+function generateCustom(){
+  const title = (document.getElementById("ct")||{}).value||"Mi escenario";
+  const ctx   = (document.getElementById("cc")||{}).value||"";
+  const q     = (document.getElementById("cq")||{}).value||"";
+  const valid = customRows.filter(r=>r.c.trim()&&r.n>0);
+  const out   = document.getElementById("custom-out");
+  if(valid.length<2){
+    out.innerHTML=`<div class="err">Necesitas al menos 2 causas con valores mayores a 0 para generar la gráfica.</div>`;
+    return;
+  }
+  customScen = {
+    id:"custom", title,
+    ctx: ctx||`Escenario personalizado con ${valid.length} categorías.`,
+    data: valid,
+    q: q||"¿Cuáles son las causas vitales en tu escenario? ¿Qué intervención concreta propondrías para la causa con mayor frecuencia?",
+    pistas:[
+      "Pista 1 — Identifica cuántas barras azul oscuro aparecen antes de que la línea naranja supere el 80%.",
+      "Pista 2 — Calcula el % exacto de casos que representan las causas vitales.",
+      "Pista 3 — ¿Tu intervención propuesta ataca la causa raíz o solo el síntoma visible?"
+    ],
+    criterio:"Una buena respuesta: nombra las causas vitales con su % acumulado, propone al menos una intervención basada en evidencia y justifica por qué esa causa debe priorizarse sobre las demás."
+  };
+  const sfx = "_c"+Date.now();
+  out.innerHTML = renderScen(customScen, valid, sfx);
+  setTimeout(()=>drawChart("chart-custom"+sfx, calcPareto(valid)), 80);
+}
+
+function renderBuilder(){
+  return`
+    <div class="scen-title" style="margin-bottom:.6rem">Construye tu propio escenario</div>
+    <p class="scen-ctx">Ingresa las causas y el número de casos observados. El sistema calculará frecuencias, porcentajes y dibujará la gráfica de Pareto automáticamente.</p>
+    <div class="builder-card">
+      <div class="meta-grid">
+        <div><div class="field-lbl">Nombre del escenario</div><input id="ct" type="text" placeholder="Ej: Infecciones en Neonatología"></div>
+        <div><div class="field-lbl">Contexto breve (opcional)</div><input id="cc" type="text" placeholder="Ej: UCI neonatal, 3 meses de registro"></div>
+      </div>
+      <div class="rows-hdr"><span>Causa / Incidencia</span><span>N° de casos</span><span></span></div>
+      <div id="drows"></div>
+      <button class="add-btn" onclick="addRow()">+ Agregar causa</button>
+      <div style="margin-bottom:1rem">
+        <div class="field-lbl">Pregunta de reflexión (opcional)</div>
+        <input id="cq" type="text" placeholder="Ej: ¿Qué intervención tendría mayor impacto en este servicio?">
+      </div>
+      <button class="gen-btn" onclick="generateCustom()">Generar gráfica de Pareto &rarr;</button>
+    </div>
+    <div id="custom-out"></div>
+  `;
+}
+
+/* ── TAB NAVIGATION ── */
+function setTab(id){
+  activeId = id;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.id===id));
+  const content = document.getElementById("content");
+  if(id==="custom"){
+    customRows=[{c:"",n:""},{c:"",n:""},{c:"",n:""},{c:"",n:""}];
+    content.innerHTML = renderBuilder();
+    refreshRows();
+  } else {
+    const s = SCENES.find(x=>x.id===id);
+    const sfx = "_"+id;
+    content.innerHTML = renderScen(s, s.data, sfx);
+    setTimeout(()=>drawChart("chart-"+id+sfx, calcPareto(s.data)), 60);
+  }
+}
+
+/* ── INIT ── */
+const tc = document.getElementById("tabs");
+SCENES.forEach(s=>{
+  const b = document.createElement("button");
+  b.className = "tab"+(s.id===activeId?" active":"");
+  b.dataset.id = s.id;
+  b.textContent = s.label;
+  b.onclick = ()=>setTab(s.id);
+  tc.appendChild(b);
+});
+setTab("lavado");
+</script>
+</body>
+</html>
